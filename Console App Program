@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+
+namespace ConsoleAppShowArray
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            List<int> CompList = new List<int>();
+            Random random;
+            int pattern=0;
+            int round = 1;  //establish parameters 
+            int score = 0;
+            int highscore = 0;
+            ConsoleKeyInfo cki;
+
+            Int32 noteC = 262; //set note frequencies 
+            Int32 noteD = 294;
+            Int32 noteE = 330;
+            Int32 noteF = 349;
+            Int32 duration = 200;
+              
+            Console.Title = "Simon Says";
+                while (true)
+                {
+                    random = new Random();
+                    pattern = random.Next(1, 5); //add a new random number to the list
+                    CompList.Add(pattern);                   
+                    Console.WriteLine("--------------------------------------------");
+                    Console.WriteLine("Round:{0}", round);  // display round number 
+                   
+                    Thread.Sleep(1000);
+
+
+                    foreach (int value in CompList)  // begin pattern sequence  
+                    {
+                        if (value == 1)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.Beep(noteC, duration);
+                        }
+                        if (value == 2)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Beep(noteD, duration);
+                        }
+                        if (value == 3)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.Beep(noteE, duration);
+                        }
+                        if (value == 4)
+                        {
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            Console.Beep(noteF, duration);
+                        }
+                        Console.Write(value);
+                        Console.ResetColor();
+                        Console.Write("   ");
+                        Thread.Sleep(400);
+
+                    }
+
+
+                    Console.WriteLine(" ");
+                    Console.WriteLine("--------------------------------------------");
+                    
+                    Console.Clear();
+                    Console.WriteLine("--------------------------------------------");
+                    Console.WriteLine("Round:{0}", round);
+                    round++;   // increment the round 
+                    foreach (int element in CompList) // begin the reading of the pattern 
+                    {
+                        cki = Console.ReadKey();
+                        //Console.Write(cki);
+                        int number;
+                        if (Int32.TryParse(cki.KeyChar.ToString(), out number)) //change input value to standard number format
+                        {
+                            Console.Write("   ");
+                        }
+                        if (number == 1)
+                        {
+                            Console.Beep(noteC, duration);
+                        }
+                        if (number == 2)
+                        {
+                            Console.Beep(noteD, duration);
+                        }
+                        if (number == 3)
+                        {
+                            Console.Beep(noteE, duration);
+                        }
+                        if (number == 4)
+                        {
+                            Console.Beep(noteF, duration);
+                        }
+
+
+                        if (number == element) // if input matches pattern, go to next input
+                        {
+                            continue;
+                        }
+                        else    // if input does not match pattern begin then game over sequence
+                        {
+                            score=round-2;
+                            Console.WriteLine();
+                            Console.WriteLine();
+                            Console.ForegroundColor = ConsoleColor.Red;
+                            Console.WriteLine("Game Over");
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write("Score:");
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine("{0}!!!", score);
+                            Console.WriteLine();
+                            if (score > highscore)
+                            {
+                                highscore = score;
+                            }
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.Write("Highscore:");
+                            Console.ForegroundColor = ConsoleColor.Green;
+                            Console.WriteLine("{0}!!!", highscore);
+                            Console.ResetColor();                            
+                            Console.WriteLine("Press any key to try again!");
+                            Console.WriteLine("--------------------------------------------");
+                            Console.Beep();
+                            Thread.Sleep(100);
+                            Console.Beep();
+                            Thread.Sleep(100);
+                            Console.Beep();
+                            Thread.Sleep(100);
+                            Console.ReadKey();
+                            Console.Clear();
+                            CompList.Clear();
+                            round = 1;
+                            break;
+                        }
+                        
+
+                    }
+                    Thread.Sleep(400);
+                    Console.Clear();
+                    
+                }       
+           
+     
+        }
+       
+    }
+
+}
