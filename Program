@@ -1,0 +1,312 @@
+//Libraries that our program uses
+using System;
+using System.Collections;
+using System.IO.Ports;
+using System.Threading;                     //use threading classes        
+using Microsoft.SPOT;                       //use smart personal objects technology classes
+using Microsoft.SPOT.Hardware;              //use hardware related SPOT classes
+using SecretLabs.NETMF.Hardware;            //use Secret Labs hardware framework
+using SecretLabs.NETMF.Hardware.Netduino;   //use the Netduino specific classes
+
+namespace Simon_Says_Final_Code                    /// Define the namespace we are in ///
+{
+    public class Program            /// Define any variables used in the program and subroutines after Main()///
+    {
+
+        static InputPort button1 = new InputPort(Pins.GPIO_PIN_D0, true, Port.ResistorMode.Disabled);  //define pin 0 as an input for button 1
+        static InputPort button2 = new InputPort(Pins.GPIO_PIN_D2, true, Port.ResistorMode.Disabled);  //define pin 2 as an input for button 2
+        static InputPort button3 = new InputPort(Pins.GPIO_PIN_D4, true, Port.ResistorMode.Disabled);  //define pin 4 as an input for button 3
+        static InputPort button4 = new InputPort(Pins.GPIO_PIN_D6, true, Port.ResistorMode.Disabled);  //define pin 6 as an input for button 4
+
+
+        static OutputPort led1 = new OutputPort(Pins.GPIO_PIN_D3, false);                               //define LED1 as being connected to pin 3
+        static OutputPort led2 = new OutputPort(Pins.GPIO_PIN_D9, false);                               //define LED2 as being connected to pin 9
+        static OutputPort led3 = new OutputPort(Pins.GPIO_PIN_D8, false);                               //define LED3 as being connected to pin 8
+        static OutputPort led4 = new OutputPort(Pins.GPIO_PIN_D7, false);                               //define LED4 as being connected to pin 7
+      
+
+        static char[] notes = "cGGcedGGbdeeegggaaaaAGAcAGFGcGAcbdc ".ToCharArray(); //The notes of our song
+        static int[] beats = { 2, 1, 1, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 1, 1, 2, 2, 1, 1, 4, 1, 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 8, 4 }; //The number of beats each note is played
+        static int tempo = 100; //The speed the song is played
+        static PWM speaker = new PWM(Pins.GPIO_PIN_D10); //define speaker as being connected to pin 10
+
+        static int ButtonPress = 0;
+        static Boolean ButtonPressed = false;
+
+
+
+        public static void Main()   /// The Main loop 
+        {
+            ArrayList CompList = new ArrayList();
+            Random random;
+            int pattern = 0;
+           
+            //int round = 1;
+            //int ButtonPress = 0;
+            //Debug.Print("Hello!");
+
+            IntroMusic();
+
+            while (true)            // Do Forever
+            {
+                //turnLEDOnWithButton();             //Turns the LED on when button one is pressed and off when not
+                random = new Random();  //setup random method
+                pattern = random.Next(4); //generate random number from 1 to 4
+                CompList.Add(pattern);//add the random number to the sequence
+                Thread.Sleep(1000);
+                foreach (int value in CompList)//display sequence for player to memorize 
+                {
+                    if (value == 0)
+                    {
+                        led1.Write(true); //light blue led
+                        speakeron(); //play the blue leds note
+                        led1.Write(false);
+                    }
+                    if (value == 1)        //light the corresponding led and play the corresponding sound for 
+                    {
+                        led2.Write(true);//light red led
+                        speakeron2(); // play the red leds note
+                        led2.Write(false);
+                    }
+                    if (value == 2)
+                    {
+                        led3.Write(true); //light yellow led
+                        speakeron3(); // play the yellow leds note
+                        led3.Write(false);
+                    }
+                    if (value == 3)
+                    {
+                        led4.Write(true); //light green led
+                        speakeron4(); //play the green leds note
+                        led4.Write(false);
+                    }
+                    //Thread.Sleep(300);
+
+
+                }
+
+                foreach (int element in CompList)// this part waits for the users imput to compare it to the correct sequence
+                {
+                    ButtonPressed = false;
+                    while (!ButtonPressed) //keep checking for a button press 
+                    {
+                        ButtonScan(); 
+                    }
+                    if (element == ButtonPress)//once a button is pressed compare it to the sequence
+                    {
+
+                        continue; //if correct continue and wait for the next button press
+                    }
+                    else //if incorrect display the gameover sequence. 
+                    {
+                        led1.Write(true);
+                        led2.Write(true); //turn on all leds 
+                        led3.Write(true);
+                        led4.Write(true);
+                        gameover(); //go to game over sequence 
+                        led1.Write(false);
+                        led2.Write(false);
+                        led3.Write(false); //turn off all leds
+                        led4.Write(false);
+                        CompList.Clear(); //clear the sequence so that a new one will be created
+                        Thread.Sleep(1000); //  give user time to cope with failing, but not too much. time is money
+                        break;
+                    }
+
+                }
+
+
+
+
+            }                       /// Close Forever Loop ///  
+        }                           /// Close the Main() Loop ///
+
+        /// <summary>
+        /// If button 1 is pressed the light is turned on if it isn't the light is turned off
+        /// </summary>
+        static void ButtonScan()
+        {
+            //a false condition means the button is being pressed
+            if (button1.Read() == false)   //Checks if the button is pressed
+            {
+                led1.Write(true);    //If button 1 isn't pressed turn the light off
+                speakeron(); //go to speaker on sequence
+                led1.Write(false);
+                ButtonPress = 0; //set an int to compare with the sequence
+                ButtonPressed = true;// stop checking for button presses
+                while (button1.Read() == false) { }//wait for the button to be relessed to continue
+            }
+            
+            if (button2.Read() == false)   //Checks if the button is pressed
+            {
+                led2.Write(true);    //If button 1 isn't pressed turn the light off
+                speakeron2(); //go to speaker 2 on sequence
+                led2.Write(false);
+                ButtonPress = 1;  //set an int to compare with the sequence
+                ButtonPressed = true;// stop checking for button presses
+                while (button2.Read() == false) { }//wait for the button to be relessed to continue
+            }
+            
+            if (button3.Read() == false)   //Checks if the button is pressed
+            {
+                led3.Write(true);    //If button 1 isn't pressed turn the light off
+                speakeron3(); //go to speaker 3 on sequence
+                led3.Write(false);
+                ButtonPress = 2;  //set an int to compare with the sequence
+                ButtonPressed = true; // stop checking for button presses
+                while (button3.Read() == false) { } //wait for the button to be relessed to continue 
+            }
+            
+            if (button4.Read() == false)   //Checks if the button is pressed
+            {
+                led4.Write(true);    //If button 1 isn't pressed turn the light off
+                speakeron4(); //go to speaker 4 on sequence
+                led4.Write(false);
+                ButtonPress = 3;  //set an int to compare with the sequence
+                ButtonPressed = true;// stop checking for button presses
+                while (button4.Read() == false) { } //wait for the button to be relessed to continue
+            }
+           
+
+        }
+
+        static void speakeron()
+        {
+            //Period is 1/frequency
+            //1/1,000,000 second : 1000000 --> 1 sec
+            // Duration for Sound over PWM (Period / 2)
+            uint myPeriod = 10000000 / 1915; //define note to play
+            speaker.SetPulse(myPeriod, myPeriod / 2);  //Play
+            Thread.Sleep(250); //0.25 second
+
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(100); //0.25 second
+        }
+
+        static void speakeron2()
+        {
+            //Period is 1/frequency
+            //1/1,000,000 second : 1000000 --> 1 sec
+            // Duration for Sound over PWM (Period / 2)
+            uint myPeriod = 10000000 / 1700; //define note to play
+            speaker.SetPulse(myPeriod, myPeriod / 2);  //Play
+            Thread.Sleep(250); //0.25 second
+
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(100); //0.25 second
+        }
+        static void speakeron3()
+        {
+            //Period is 1/frequency
+            //1/1,000,000 second : 1000000 --> 1 sec
+            // Duration for Sound over PWM (Period / 2)
+            uint myPeriod = 10000000 / 1519; //define note to play
+            speaker.SetPulse(myPeriod, myPeriod / 2);  //Play
+            Thread.Sleep(250); //0.25 second
+
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(100); //0.1 second
+        }
+        static void speakeron4()
+        {
+            //Period is 1/frequency
+            //1/1,000,000 second : 1000000 --> 1 sec
+            // Duration for Sound over PWM (Period / 2)
+            uint myPeriod = 10000000 / 1432; //define note to play
+            speaker.SetPulse(myPeriod, myPeriod / 2);  //Play
+            Thread.Sleep(250); //0.25 second
+
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(100); //0.1 second
+        }
+        static void speakeroff()
+        {
+            speaker.SetPulse(0, 0); // Turn Off
+        }
+ 
+        static void IntroMusic()   
+        {
+            
+            
+                for (int i = 0; i < notes.Length; i++) //Run through each note
+                {
+                    if (i % 2 == 0 && i < notes.Length-1) //alternates the leds for the intro song
+                    {
+                        led1.Write(true);
+                        led2.Write(false);
+                        led3.Write(true);
+                        led4.Write(false);
+                    }
+
+                    else if (i % 2 != 0 && i < notes.Length - 1) // //alternates the leds for the intro song
+                    {
+                        led1.Write(false);
+                        led2.Write(true);
+                        led3.Write(false);
+                        led4.Write(true);
+                    }
+                    else
+                    {
+                        led1.Write(false);  // turn off all leds when finished
+                        led2.Write(false);
+                        led3.Write(false);
+                        led4.Write(false);
+                    }
+                    playNote(notes[i], beats[i] * tempo);  //Plays the current note
+                    playNote(' ', tempo / 2);                //pauses before going on to next note
+                }
+                led1.Write(false);
+                led2.Write(false); // just to be safe turn them off again
+                led3.Write(false);
+                led4.Write(false);
+            
+        }
+
+       
+        /// Plays a particular tone for a particular duration
+        /// <param name="tone">The tone to play</param>
+        /// <param name="duration">How long to play the tone</param>
+        static void playTone(int tone, int duration)
+        {
+            speaker.SetPulse((uint)(tone * 2), (uint)tone);     //sets the pin to the right PWM settings
+            Thread.Sleep(duration);                             //waits the appropriate amount of time
+        }
+
+       
+        /// Looks up the tone for a note based on it's letter and plays
+        /// it for a specific amount of time
+        static void playNote(char note, int duration)
+        {
+            char[] names = { 'F', 'G', 'A', 'b', 'c', 'd', 'e', 'f', 'g', 'a', ' ' };    //The array of possible notes
+            int[] tones = { 500000 / 349, 500000 / 392, 500000 / 440, 500000 / 494, 500000 / 523, 500000 / 587, 500000 / 659, 500000 / 698, 500000 / 784, 500000 / 880, 0 }; //The frequency of each note in the previous array
+
+            for (int i = 0; i < 11; i++)     //Goes through each note
+            {
+                if (names[i] == note)
+                {
+                    playTone(tones[i], duration); //Plays the right note
+                }
+            }
+        }
+        static void gameover()
+        {
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(300); //0.3 seconds
+            uint myPeriodd = 1000000 / 147; //define note to play
+            speaker.SetPulse(myPeriodd, myPeriodd / 2);  //Play
+            Thread.Sleep(300); //0.3 seconds
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(150); //0.15 seconds
+            uint myPeriodc = 1000000 / 131; //define note to play
+            speaker.SetPulse(myPeriodc, myPeriodc / 2);  //Play
+            Thread.Sleep(300); //0.3 seconds
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(150); //0.15 seconds
+            uint myPeriodb = 1000000 / 117; //define note to play
+            speaker.SetPulse(myPeriodb, myPeriodb / 2);  //Play
+            Thread.Sleep(900); //0.9 seconds
+            speaker.SetPulse(0, 0); // Turn Off
+            Thread.Sleep(150); //0.15 seconds
+        }
+    }                               /// Close the Program Loop ///
+}                                   /// Close the Namespace Loop ///
